@@ -1,0 +1,10 @@
+{
+  "sourceRoot": "src",
+  "compilerOptions": {
+    "deleteOutDir": true,
+    "assets": [
+      "infrastructure/database/schema.sql"
+    ],
+    "watchAssets": true
+  }
+}

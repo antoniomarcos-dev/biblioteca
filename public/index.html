@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#193b33">
+  <title>Sistema de Biblioteca · Catálogo, Reservas, Empréstimos e Ocorrências</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="catalogo.css">
+  <script src="catalogo.js" defer></script>
+</head>
+<body>
+  <header>
+    <div class="barra largura">
+      <a class="marca" href="/"><span class="simbolo" aria-hidden="true"><i></i></span>Biblioteca</a>
+      <nav aria-label="Navegação principal" class="menu-topo">
+        <a href="#secao-acervo" data-aba="todas" aria-current="page">Painel Completo</a>
+        <a href="#secao-acervo" data-aba="acervo">Acervo</a>
+        <a href="#secao-emprestimos" data-aba="emprestimos">Empréstimos e Devolutivas</a>
+        <a href="#secao-reservas" data-aba="reservas">Reservas</a>
+        <a href="#secao-ocorrencias" data-aba="ocorrencias">Ocorrências</a>
+        <a href="/docs" id="link-docs">Swagger API <span aria-hidden="true">↗</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="largura">
+    <section class="abertura" aria-labelledby="titulo">
+      <div class="apresentacao">
+        <h1 id="titulo">Gestão da Biblioteca</h1>
+        <p>Cadastre livros e exemplares, realize reservas, registre empréstimos, devolutivas, renovações e ocorrências em um só lugar.</p>
+        <dl class="numeros">
+          <div><dt>Títulos</dt><dd id="total-titulos">—</dd></div>
+          <div><dt>Exemplares</dt><dd id="total-exemplares">—</dd></div>
+          <div><dt>Disponíveis</dt><dd id="total-disponiveis">—</dd></div>
+          <div><dt>Emprestados</dt><dd id="total-emprestados">—</dd></div>
+          <div><dt>Reservas ativas</dt><dd id="total-reservas">—</dd></div>
+          <div><dt>Ocorrências</dt><dd id="total-ocorrencias">—</dd></div>
+        </dl>
+      </div>
+      <div class="foto" aria-hidden="true"></div>
+    </section>
+
+    <div id="aviso" class="aviso" role="alert" hidden></div>
+
+    <!-- SEÇÃO 1: ACERVO (LIVROS E EXEMPLARES) -->
+    <section id="secao-acervo" class="acervo bloco-painel" data-painel="acervo" aria-labelledby="titulo-acervo">
+      <div class="cabecalho-secao">
+        <div>
+          <h2 id="titulo-acervo">1. Acervo de Livros e Exemplares</h2>
+          <p class="subtitulo-secao">Cadastre, edite ou exclua títulos e gerencie os exemplares físicos de cada unidade (Central e Bairro).</p>
+        </div>
+        <button id="tentar" type="button" class="acao-secundaria" hidden>Recarregar dados</button>
+      </div>
+
+      <div class="grade-formularios">
+        <form id="form-livro" class="cartao-form" aria-label="Cadastrar ou editar livro">
+          <h3 id="titulo-form-livro">Cadastrar novo livro</h3>
+          <input type="hidden" id="editar-livro-id" value="">
+          <div class="campos-linha">
+            <label class="campo">
+              <span>Título da obra</span>
+              <input type="text" id="novo-titulo" placeholder="Ex.: Memorial de Aires" required maxlength="300">
+            </label>
+            <label class="campo">
+              <span>Autor</span>
+              <input type="text" id="novo-autor" placeholder="Ex.: Machado de Assis" required maxlength="300">
+            </label>
+            <label class="campo" id="campo-unidade-inicial">
+              <span>Exemplar inicial</span>
+              <select id="nova-unidade">
+                <option value="1">Criar 1 exemplar na Central</option>
+                <option value="2">Criar 1 exemplar no Bairro</option>
+                <option value="">Sem exemplar inicial</option>
+              </select>
+            </label>
+          </div>
+          <div class="botoes-form">
+            <button type="submit" id="btn-cadastrar" class="botao-primario">Cadastrar livro</button>
+            <button type="button" id="btn-cancelar-edicao" class="acao-secundaria" hidden>Cancelar edição</button>
+          </div>
+        </form>
+
+        <form id="form-exemplar" class="cartao-form" aria-label="Adicionar exemplar avulso">
+          <h3>Adicionar exemplar a um livro</h3>
+          <div class="campos-linha">
+            <label class="campo">
+              <span>Livro do acervo</span>
+              <select id="exemplar-livro-id" required>
+                <option value="">Selecione um livro…</option>
+              </select>
+            </label>
+            <label class="campo">
+              <span>Unidade de origem</span>
+              <select id="exemplar-unidade-id" required>
+                <option value="1">Unidade Central (#1)</option>
+                <option value="2">Unidade Bairro (#2)</option>
+              </select>
+            </label>
+          </div>
+          <div class="botoes-form">
+            <button type="submit" class="botao-primario">Adicionar exemplar</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="filtros">
+        <label class="busca">
+          <span class="lupa" aria-hidden="true"></span>
+          <input type="search" id="busca" aria-label="Buscar por título ou autor" placeholder="Buscar no catálogo por título ou autor…" disabled>
+        </label>
+        <label class="seletor">
+          <span class="sr">Disponibilidade</span>
+          <select id="filtro" disabled>
+            <option value="todos">Todos os títulos</option>
+            <option value="disponiveis">Com exemplar disponível</option>
+            <option value="indisponiveis">Sem exemplar disponível</option>
+          </select>
+        </label>
+      </div>
+
+      <p id="resultado" role="status">Carregando acervo…</p>
+      <div id="livros"></div>
+      <noscript>Ative o JavaScript para consultar e operar o sistema da biblioteca.</noscript>
+    </section>
+
+    <!-- SEÇÃO 2: EMPRÉSTIMOS, RENOVAÇÕES E DEVOLUTIVAS -->
+    <section id="secao-emprestimos" class="bloco-painel" data-painel="emprestimos" aria-labelledby="titulo-emprestimos">
+      <div class="cabecalho-secao">
+        <div>
+          <h2 id="titulo-emprestimos">2. Empréstimos, Renovações e Devolutivas</h2>
+          <p class="subtitulo-secao">Realize novos empréstimos (prazo de 7 dias úteis), renove prazos e registre a devolução (devolutiva) na unidade Central ou Bairro.</p>
+        </div>
+      </div>
+
+      <form id="form-emprestimo" class="cartao-form" aria-label="Registrar novo empréstimo">
+        <h3>Registrar novo empréstimo</h3>
+        <div class="campos-linha">
+          <label class="campo">
+            <span>Leitor</span>
+            <select id="emprestimo-leitor-id" required>
+              <option value="1">Ana (Leitora · ID 1)</option>
+              <option value="2">Beto (Leitor · ID 2)</option>
+            </select>
+          </label>
+          <label class="campo">
+            <span>Exemplar disponível para retirada</span>
+            <select id="emprestimo-exemplar-id" required>
+              <option value="">Selecione um exemplar disponível…</option>
+            </select>
+          </label>
+          <div class="campo-botao">
+            <button type="submit" class="botao-primario">Realizar empréstimo</button>
+          </div>
+        </div>
+      </form>
+
+      <div id="lista-emprestimos" class="grade-cartoes"></div>
+    </section>
+
+    <!-- SEÇÃO 3: RESERVAS E FILA DE ESPERA -->
+    <section id="secao-reservas" class="bloco-painel" data-painel="reservas" aria-labelledby="titulo-reservas">
+      <div class="cabecalho-secao">
+        <div>
+          <h2 id="titulo-reservas">3. Reservas por Título</h2>
+          <p class="subtitulo-secao">Reserve qualquer livro para um leitor, acompanhe a posição na fila, efetive a retirada quando liberada ou cancele/expire reservas.</p>
+        </div>
+      </div>
+
+      <form id="form-reserva" class="cartao-form" aria-label="Criar nova reserva">
+        <h3>Fazer reserva de livro</h3>
+        <div class="campos-linha">
+          <label class="campo">
+            <span>Leitor solicitante</span>
+            <select id="reserva-leitor-id" required>
+              <option value="1">Ana (Leitora · ID 1)</option>
+              <option value="2">Beto (Leitor · ID 2)</option>
+            </select>
+          </label>
+          <label class="campo">
+            <span>Livro desejado</span>
+            <select id="reserva-livro-id" required>
+              <option value="">Selecione um livro…</option>
+            </select>
+          </label>
+          <div class="campo-botao">
+            <button type="submit" class="botao-primario">Reservar livro</button>
+          </div>
+        </div>
+      </form>
+
+      <div id="lista-reservas" class="grade-cartoes"></div>
+    </section>
+
+    <!-- SEÇÃO 4: OCORRÊNCIAS (AVARIAS E EXTRAVIOS) E FERIADOS -->
+    <section id="secao-ocorrencias" class="bloco-painel" data-painel="ocorrencias" aria-labelledby="titulo-ocorrencias">
+      <div class="cabecalho-secao">
+        <div>
+          <h2 id="titulo-ocorrencias">4. Ocorrências (Avarias e Extravios) e Calendário</h2>
+          <p class="subtitulo-secao">Registre e consulte ocorrências de avaria ou extravio de exemplares (bloqueando a cópia e realocando reservas) e cadastre feriados por unidade.</p>
+        </div>
+      </div>
+
+      <div class="grade-formularios">
+        <form id="form-ocorrencia" class="cartao-form" aria-label="Registrar ocorrência">
+          <h3>Registrar ocorrência em exemplar</h3>
+          <div class="campos-linha">
+            <label class="campo">
+              <span>Exemplar afetado</span>
+              <select id="ocorrencia-exemplar-id" required>
+                <option value="">Selecione um exemplar…</option>
+              </select>
+            </label>
+            <label class="campo">
+              <span>Tipo de ocorrência</span>
+              <select id="ocorrencia-tipo" required>
+                <option value="avaria">Avaria (dano físico)</option>
+                <option value="extravio">Extravio (perda)</option>
+              </select>
+            </label>
+          </div>
+          <label class="campo">
+            <span>Descrição da ocorrência</span>
+            <input type="text" id="ocorrencia-descricao" placeholder="Ex.: Capa solta, páginas manchadas ou exemplar extraviado" required maxlength="2000">
+          </label>
+          <div class="botoes-form">
+            <button type="submit" class="botao-primario">Registrar ocorrência</button>
+          </div>
+        </form>
+
+        <form id="form-feriado" class="cartao-form" aria-label="Cadastrar feriado na unidade">
+          <h3>Calendário: Cadastrar feriado na unidade</h3>
+          <div class="campos-linha">
+            <label class="campo">
+              <span>Unidade</span>
+              <select id="feriado-unidade-id" required>
+                <option value="1">Unidade Central (#1)</option>
+                <option value="2">Unidade Bairro (#2)</option>
+              </select>
+            </label>
+            <label class="campo">
+              <span>Data do feriado</span>
+              <input type="date" id="feriado-data" required>
+            </label>
+          </div>
+          <div class="botoes-form">
+            <button type="submit" class="acao-secundaria">Cadastrar feriado</button>
+          </div>
+          <div id="lista-feriados" class="lista-tags"></div>
+        </form>
+      </div>
+
+      <h3 class="subtitulo-lista">Histórico de ocorrências registradas</h3>
+      <div id="lista-ocorrencias" class="grade-cartoes"></div>
+    </section>
+  </main>
+
+  <template id="modelo-livro">
+    <details class="livro" open>
+      <summary>
+        <span class="capa" aria-hidden="true"></span>
+        <span class="obra"><strong class="titulo"></strong><span class="autor"></span></span>
+        <span class="situacao"></span><span class="seta" aria-hidden="true"></span>
+      </summary>
+      <div class="detalhes">
+        <div class="topo-detalhes">
+          <h3>Exemplares e ações do título</h3>
+          <div class="acoes-livro">
+            <button type="button" class="acao-destaque btn-reservar-ana">Reservar p/ Ana</button>
+            <button type="button" class="acao-destaque btn-reservar-beto">Reservar p/ Beto</button>
+            <button type="button" class="acao-secundaria btn-add-central">+ Exemplar Central</button>
+            <button type="button" class="acao-secundaria btn-add-bairro">+ Exemplar Bairro</button>
+            <button type="button" class="acao-secundaria btn-editar-livro">Editar livro</button>
+            <button type="button" class="acao-perigo btn-excluir-livro">Excluir livro</button>
+          </div>
+        </div>
+        <ul></ul>
+      </div>
+    </details>
+  </template>
+</body>
+</html>
