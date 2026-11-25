@@ -14,11 +14,27 @@ import { UnidadeController } from './presentation/controllers/unidade.controller
 import { AcessoGuard } from './presentation/http/acesso';
 
 @Module({
-  controllers: [LivroController, ExemplarController, ReservaController, EmprestimoController, OcorrenciaController, UnidadeController],
-  providers: [CatalogoService, ReservaService, EmprestimoService, AcervoService, { provide: APP_GUARD, useClass: AcessoGuard }],
+  controllers: [
+    LivroController,
+    ExemplarController,
+    ReservaController,
+    EmprestimoController,
+    OcorrenciaController,
+    UnidadeController,
+  ],
+  providers: [
+    CatalogoService,
+    ReservaService,
+    EmprestimoService,
+    AcervoService,
+    { provide: APP_GUARD, useClass: AcessoGuard },
+  ],
 })
 export class AppModule {
   static configurar(contexto: Contexto): DynamicModule {
-    return { module: AppModule, providers: [{ provide: Contexto, useValue: contexto }] };
+    return {
+      module: AppModule,
+      providers: [{ provide: Contexto, useValue: contexto }],
+    };
   }
 }

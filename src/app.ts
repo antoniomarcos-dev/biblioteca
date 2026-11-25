@@ -2,11 +2,11 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { join } from 'node:path';
 import { AppModule } from './app.module';
 import { Contexto } from './application/contexto';
 import { invalido } from './domain/erros';
 import { ErroFilter } from './presentation/http/erro.filter';
-import { join } from 'node:path';
 
 export async function criarApp(contexto: Contexto, silencioso = false) {
   const ctx = silencioso ? new Contexto(contexto.db, contexto.hoje, true) : contexto;
@@ -21,8 +21,13 @@ export async function criarApp(contexto: Contexto, silencioso = false) {
     whitelist: true, forbidNonWhitelisted: true,
     exceptionFactory: erros => invalido('Campo inválido ou ausente: ' + erros.map(e => e.property).join(', ') + '.'),
   }));
-  const config = new DocumentBuilder().setTitle('Biblioteca').setVersion('1.0').setOpenAPIVersion('3.1.0')
-    .setDescription('Consulte o catálogo ou use Authorize com o token do seu perfil para testar as operações protegidas.').addBearerAuth().build();
+  const config = new DocumentBuilder()
+    .setTitle('Biblioteca')
+    .setVersion('1.0')
+    .setOpenAPIVersion('3.1.0')
+    .setDescription('Consulte o catálogo ou use Authorize com o token do seu perfil para testar as operações protegidas.')
+    .addBearerAuth()
+    .build();
   const documento = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, documento, {
     jsonDocumentUrl: 'openapi.json', raw: ['json'], swaggerOptions: { docExpansion: 'list', tryItOutEnabled: true },

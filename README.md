@@ -1,50 +1,69 @@
 # Biblioteca
 
-API NestJS para cadastrar livros e exemplares, reservar títulos e controlar empréstimos. Você pode testar as operações diretamente no navegador.
+API REST e catálogo web para administrar livros, exemplares, reservas e empréstimos em uma biblioteca com mais de uma unidade. O projeto usa NestJS, TypeScript/JavaScript e SQLite.
 
-## Iniciar
+## Comece por aqui
 
-Use Node.js 24.15 ou mais recente da série 24. Na pasta do projeto, instale as dependências com `npm install`. O banco de dados inicial (`data/biblioteca.sqlite`) é preenchido automaticamente ao iniciar o servidor.
+### Requisitos
 
-```sh
+- Node.js 24.15 ou superior na série 24
+- npm
+
+### Instalar e iniciar
+
+```powershell
+npm ci
 npm run start:dev
 ```
 
-Abra [o catálogo da biblioteca](http://127.0.0.1:3000/) para buscar por título ou autor, cadastrar livros e gerenciar exemplares. Você também pode testar todas as rotas no Insomnia, Postman ou [Swagger](http://127.0.0.1:3000/docs) sem precisar configurar token Bearer (o servidor utiliza automaticamente o perfil adequado para cada rota em ambiente de desenvolvimento). Caso queira testar um perfil específico via `Authorization: Bearer <token>`, use o nome (`ana`, `beto`, `cris`, `dani`) ou os tokens fixos exibidos por `npm run demo`.
+O servidor inicia em `http://127.0.0.1:3000`. A página inicial abre o catálogo; a documentação interativa fica em `/docs` e o contrato OpenAPI em `/openapi.json`.
 
-## Testar pelo navegador
+| Comando | O que faz |
+| --- | --- |
+| `npm run start:dev` | Inicia a API em modo de desenvolvimento |
+| `npm run build` | Compila TypeScript para `dist/` |
+| `npm start` | Inicia a aplicação compilada |
+| `npm test` | Compila e executa os testes de integração |
+| `npm run demo` | Inicializa os dados de demonstração em um banco vazio e exibe credenciais locais |
 
-1. No catálogo, clique em **API** para abrir o [Swagger](http://127.0.0.1:3000/docs). Em **Livro → GET /livros**, clique em **Execute** para consultar o catálogo em JSON.
-2. Clique em **Authorize**, cole apenas o token de **Cris** (bibliotecário) e confirme. Feche a janela.
-3. Em **POST /livros**, edite o título e o autor do exemplo e clique em **Execute**. O código **201** confirma o cadastro. Copie o `id` da resposta.
-4. Em **Exemplar → POST /exemplares**, informe esse `livroId` e `unidadeOrigemId` igual a `1` (Central). Execute para criar uma cópia física.
+Configurações disponíveis:
 
-| Operação | Livro | Exemplar |
+| Variável | Padrão | Finalidade |
 | --- | --- | --- |
-| Cadastrar | `POST /livros` | `POST /exemplares` |
-| Listar | `GET /livros` | `GET /exemplares` |
-| Consultar | `GET /livros/{id}` | `GET /exemplares/{id}` |
-| Editar | `PUT /livros/{id}` | `PUT /exemplares/{id}` |
-| Excluir | `DELETE /livros/{id}` | `DELETE /exemplares/{id}` |
+| `HOST` | `127.0.0.1` | Interface de rede onde o servidor escuta |
+| `PORT` | `3000` | Porta HTTP |
+| `DB_PATH` | `data/biblioteca.sqlite` | Caminho do arquivo SQLite |
 
-Para experimentar uma reserva, troque a credencial em **Authorize** pelo token de **Ana** (leitor, ID 1) e execute `POST /reservas` com o ID do livro. Volte ao token de Cris e use `POST /emprestimos` com o ID de Ana e o ID do exemplar liberado. A resposta mostra o prazo de devolução em sete dias úteis. O token de **Dani** (gestor) permite registrar avarias e extravios em `POST /ocorrencias`.
+O diretório `data/`, dependências e arquivos compilados não são versionados. Os testes usam bancos SQLite em memória.
 
-## Estrutura
+> **Atenção:** a seleção automática de perfil e os identificadores de demonstração servem para desenvolvimento local. A aplicação atual não configura um provedor de identidade para produção. Não exponha o servidor sem definir e validar um mecanismo de autenticação apropriado.
+
+## Como o repositório está organizado
 
 ```text
-src/
-  main.ts                  inicia a API
-  app.module.ts            registra controllers e serviços
-  presentation/
-    controllers/           rotas de livros, exemplares e circulação
-    dto/                   campos e validações das requisições
-    mappers/               formato das respostas
-    http/                  permissões e tratamento de erros
-  application/services/    regras de reserva, empréstimo e devolução
-  domain/entities/         dados de livros, exemplares e usuários
-  infrastructure/
-    repositories/          consultas e gravações
-    database/              conexão SQLite, tabelas e demonstração
+.
+├── docs/                 Arquitetura, domínio e guia para contribuir
+├── public/               Interface estática do catálogo
+├── scripts/              Inicialização da aplicação compilada
+├── src/
+│   ├── application/      Casos de uso e regras de negócio
+│   ├── domain/           Entidades e erros do domínio
+│   ├── infrastructure/   SQLite, repositórios e tokens
+│   ├── presentation/     Controllers, DTOs, HTTP e formato das respostas
+│   ├── app.module.ts     Registro das dependências NestJS
+│   ├── app.ts            Configuração HTTP, validação, Swagger e arquivos estáticos
+│   └── main.ts           Inicialização do banco e do servidor
+└── test/                 Testes de integração da API
 ```
 
-Os dados ficam em `data/biblioteca.sqlite`. Para rodar os testes automatizados, use `npm test`. Eles usam bancos em memória. O contrato da API está disponível em [openapi.json](http://127.0.0.1:3000/openapi.json).
+Para entender a responsabilidade de cada camada e o fluxo de uma requisição, consulte [docs/architecture.md](docs/architecture.md). Para executar testes, adicionar uma rota ou alterar o banco, consulte [docs/development.md](docs/development.md).
+
+## Experimente a API
+
+1. Abra `http://127.0.0.1:3000/docs`.
+2. Consulte `GET /livros` para ver o catálogo.
+3. Use `POST /reservas` para reservar um título.
+4. Use `POST /emprestimos` como bibliotecário para registrar um empréstimo.
+5. Consulte a documentação OpenAPI para os demais recursos, perfis permitidos e formatos dos dados.
+
+O sistema inclui dados locais de demonstração e perfis de leitor, bibliotecário e gestor. Os fluxos de reserva, circulação, transferência e ocorrências estão descritos em [docs/architecture.md](docs/architecture.md).
